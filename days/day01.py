@@ -28,6 +28,7 @@ def parse_input(raw: str) -> Any:
 
 def part1(data: Any) -> Any:
     """Solve part 1."""
+    
     zeroes = 0
     dial = 50
     for line in data:
@@ -54,7 +55,7 @@ def part2(data: Any) -> Any:
             for i in range(int(n)):
                 dial -= 1
                 if dial == 0: zeroes += 1
-                if dial <0: dial += 100
+                if dial < 0: dial += 100
         else:
             for i in range(int(n)):
                 dial += 1
