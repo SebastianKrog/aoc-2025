@@ -36,9 +36,8 @@ def _ensure_tests_dir() -> Path:
 
 def cmd_init_day(args: argparse.Namespace) -> None:
     day = args.day
-    overwrite = args.overwrite
 
-    result = save_day_data(day, overwrite=overwrite)
+    result = save_day_data(day, overwrite=True)
 
     days_pkg = _ensure_days_package()
     day_mod_path = days_pkg / f"day{day:02d}.py"
@@ -116,14 +115,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Fetch input/examples/question and scaffold code + tests for a given day.",
     )
     sp_init.add_argument("day", type=int, help="AoC day (1-25)")
-    sp_init.add_argument(
-        "--overwrite",
-        action="store_true",
-        help=(
-            "Overwrite input/examples/question files. "
-            "Solution and test files are never overwritten."
-        ),
-    )
     sp_init.set_defaults(func=cmd_init_day)
 
     sp_run = sub.add_parser(
