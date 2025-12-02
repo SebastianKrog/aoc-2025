@@ -43,13 +43,13 @@ def main() -> None:
     data = parse_input(raw)
 
     p1 = time_call(part1, data)
-    print(f"Year {AOC_YEAR} Day {DAY} - Part 1: {p1.value} ({p1.seconds:.3f}s)")
+    print(f"Year {{AOC_YEAR}} Day {{DAY}} - Part 1: {{p1.value}} ({{p1.seconds:.3f}}s)")
 
     raw = read_input(DAY)
     data = parse_input(raw)
 
     #p2 = time_call(part2, data)
-    #print(f"Year {AOC_YEAR} Day {DAY} - Part 2: {p2.value} ({p2.seconds:.3f}s)")
+    #print(f"Year {{AOC_YEAR}} Day {{DAY}} - Part 2: {{p2.value}} ({{p2.seconds:.3f}}s)")
 
 
 if __name__ == "__main__":
