@@ -35,8 +35,7 @@ def part1(data: Any) -> Any:
     def lsplit(i: int):
         s = str(i)
         l = int(len(s)/2)
-        if len(s) % 2: # odd
-            return 10**l
+        if len(s) % 2: return 10**l
         return int(s[0:l])
     
     def dbl(i: int):
@@ -68,16 +67,17 @@ def part2(data: Any) -> Any:
             return int(str(i)*n)
     
         found = set()
-        for denom in range(len(str(ma)), 1, -1):
+        for denom in range(2, len(str(ma)) + 1):
             dmi, dma = div(mi, ma, denom)
-            for n in range(dmi, dma+1):
+            for n in range(dmi, dma + 1):
                 i = mul(n, denom)
                 if i > ma: break
                 if mi <= i <= ma and i not in found: 
                     found.add(i)
-                    yield i
 
-    return sum(sum(find_repeats(mi, ma)) for mi, ma in data)
+        return sum(found)
+
+    return sum(find_repeats(mi, ma) for mi, ma in data)
 
 
 def main() -> None:
