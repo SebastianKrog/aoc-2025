@@ -47,7 +47,18 @@ def part1(data: Any) -> Any:
 def part2(data: Any) -> Any:
     """Solve part 2."""
 
-    return data
+    def joltage(l, found):
+        if len(found) == 12: return int("".join(found))
+        sublist = l[:len(l)-(11-len(found))]
+        for i in range(9, 0, -1):
+            i = str(i)
+            if i in sublist:
+                idx = sublist.index(i)
+                break
+        found.append(l[idx])
+        return joltage(l[idx+1:], found)
+
+    return sum(joltage(l, []) for l in data)
 
 
 def main() -> None:
@@ -60,8 +71,8 @@ def main() -> None:
     raw = read_input(DAY)
     data = parse_input(raw)
 
-    #p2 = time_call(part2, data)
-    #print(f"Year {AOC_YEAR} Day {DAY} - Part 2: {p2.value} ({p2.seconds:.3f}s)")
+    p2 = time_call(part2, data)
+    print(f"Year {AOC_YEAR} Day {DAY} - Part 2: {p2.value} ({p2.seconds:.3f}s)")
 
 
 if __name__ == "__main__":
