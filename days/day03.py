@@ -51,12 +51,9 @@ def part2(data: Any) -> Any:
         if len(found) == 12: return int("".join(found))
         sublist = l[:len(l)-(11-len(found))]
         for i in range(9, 0, -1):
-            i = str(i)
-            if i in sublist:
-                idx = sublist.index(i)
-                break
-        found.append(l[idx])
-        return joltage(l[idx+1:], found)
+            if str(i) in sublist: break
+        idx = sublist.index(str(i))
+        return joltage(l[idx+1:], found+[l[idx]])
 
     return sum(joltage(l, []) for l in data)
 
