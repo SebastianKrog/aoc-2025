@@ -30,7 +30,8 @@ def part1(data: Any) -> Any:
     zum = 0
     for pos, var in iter_grid(data):
         if var != "@": continue
-        if sum(data[r][c] == "@" for r,c in neighbors8(pos, data)) < 4:
+        if sum(data[r][c] == "@" for r,c
+               in neighbors8(pos, data)) < 4:
             zum += 1
 
     return zum
@@ -44,7 +45,8 @@ def part2(data: Any) -> Any:
         zum = nzum
         for (r1, c1), var in iter_grid(data):
             if var != "@": continue
-            if sum(data[r2][c2] == "@" for r2,c2 in neighbors8((r1,c1), data)) < 4:
+            if sum(data[r2][c2] == "@" for r2,c2 
+                   in neighbors8((r1,c1), data)) < 4:
                 data[r1][c1] = "."
                 nzum += 1
 
