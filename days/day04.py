@@ -39,17 +39,18 @@ def part1(data: Any) -> Any:
 
 def part2(data: Any) -> Any:
     """Solve part 2."""
+
+    rolls = set(p for p, v in iter_grid(data) if v == "@")
+
     zum = None
     nzum = 0
     while nzum != zum:
         zum = nzum
-        for (r1, c1), var in iter_grid(data):
-            if var != "@": continue
-            if sum(data[r2][c2] == "@" for r2,c2 
-                   in neighbors8((r1,c1), data)) < 4:
-                data[r1][c1] = "."
+        for pos in list(rolls):
+            if sum(pos in rolls for pos 
+                   in neighbors8(pos, data)) < 4:
+                rolls.remove(pos)
                 nzum += 1
-
     return zum
 
 
