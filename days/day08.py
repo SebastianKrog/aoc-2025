@@ -71,8 +71,7 @@ def part1(data: Any, n) -> Any:
 def part2(data: Any) -> Any:
     """Solve part 2."""
     dists = sort_by_dist(data)
-    joining_points = group_into_networks(dists, max_n=None, n_points=len(data))
-    (x1,_,_), (x2,_,_) = joining_points
+    (x1,_,_), (x2,_,_) = group_into_networks(dists, None, len(data))
 
     return x1*x2
 
