@@ -36,7 +36,7 @@ def sort_by_dist(points):
     return sorted(dists, key=lambda x: x[2])
 
 
-def group_into_network(dists, max_n = None, n_points=None):
+def group_into_networks(dists, max_n = None, n_points=None):
     n = max_n or len(dists)
     seen = set()
     networks = []
@@ -50,8 +50,8 @@ def group_into_network(dists, max_n = None, n_points=None):
                 if p1 in nw or p2 in nw:
                     new_nw = new_nw.union(nw)
                 else: new_networks.append(nw)
-            networks = new_networks
             new_networks.append(new_nw)
+            networks = new_networks
         seen.add(p1)
         seen.add(p2)
         if max_n is None:
@@ -63,7 +63,7 @@ def group_into_network(dists, max_n = None, n_points=None):
 def part1(data: Any, n) -> Any:
     """Solve part 1."""
     dists = sort_by_dist(data)
-    networks = group_into_network(dists, max_n=n)
+    networks = group_into_networks(dists, max_n=n)
 
     return prod(sorted([len(a) for a in networks])[-3:])
 
@@ -71,7 +71,7 @@ def part1(data: Any, n) -> Any:
 def part2(data: Any) -> Any:
     """Solve part 2."""
     dists = sort_by_dist(data)
-    joining_points = group_into_network(dists, max_n=None, n_points=len(data))
+    joining_points = group_into_networks(dists, max_n=None, n_points=len(data))
     (x1,_,_), (x2,_,_) = joining_points
 
     return x1*x2
