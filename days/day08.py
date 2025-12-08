@@ -54,9 +54,8 @@ def group_into_networks(dists, max_n = None, n_points=None):
             networks = new_networks
         seen.add(p1)
         seen.add(p2)
-        if max_n is None:
-            if len(seen) == n_points and len(networks) == 1:
-                return p1, p2  # For part 2, just return the joining points
+        if max_n is None and len(seen) == n_points and len(networks) == 1:
+            return p1, p2  # For part 2, just return the joining points
     return networks
 
 
