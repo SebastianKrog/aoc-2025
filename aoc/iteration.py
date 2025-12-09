@@ -1,5 +1,5 @@
 from __future__ import annotations
-from itertools import groupby
+from itertools import groupby, tee, islice, chain, pairwise
 from collections.abc import Iterable as IterableABC, Callable as CallableABC
 from collections import Counter
 from typing import Iterable, Iterator, List, Tuple, TypeVar, Callable, Union
@@ -118,3 +118,39 @@ def split_by(
                 yield chunk
         else:
             yield chunk
+
+
+def nwise(
+    iterable: Iterable[T],
+    n: int = 2,
+    *,
+    circular: bool = False,
+) -> Iterator[Tuple[T, ...]]:
+    """
+    Return sliding windows of length n from iterable, like itertools.pairwise.
+
+    If circular is False (default), stop when no full window remains.
+    If circular is True, treat the iterable as circular and wrap around,
+    yielding one window per input element for finite inputs.
+
+    Args:
+        iterable: Source of items.
+        n: Window size (must be >= 1), defaults to 2.
+        circular: Whether to wrap around at the end.
+    """
+    if n <= 0:
+        raise ValueError("n must be >= 1")
+
+    if n == 1:
+        return ((x,) for x in iterable)
+
+    if n == 2 and not circular:
+        return pairwise(iterable)
+
+    if circular:
+        it_main, it_head = tee(iterable)
+        head = tuple(islice(it_head, n - 1))
+        iterable = chain(it_main, head)
+
+    iters = tee(iterable, n)
+    return zip(*(islice(it, i, None) for i, it in enumerate(iters)))
