@@ -14,11 +14,11 @@ def test_example_part1():
     # Replace 0 with the expected answer for part 1.
     assert part1(data) == 50
 
-@pytest.mark.skip(reason="Skip until you've done part1")
+
 def test_example_part2():
     raw = read_example(DAY, idx=1)
     from days.day09 import parse_input, part2
 
     data = parse_input(raw)
     # Replace 0 with the expected answer for part 2.
-    assert part2(data) == 0
+    assert part2(data) == 24
