@@ -67,6 +67,32 @@ def parse_int_grid(
     return [[int(ch, base) for ch in row] for row in char_grid]
 
 
+def parse_dict_grid(
+    raw: str,
+    *,
+    trim: bool = True,
+    keep_empty: bool = False,
+    cell_to_value: Callable[[str], T] | None = None,
+) -> dict[Pos, T]:
+    """Parse a multiline string into a dict[(row, col) -> value].
+
+    - trim / keep_empty: passed through to parse_char_grid.
+    - cell_to_value: converts each character to a value (e.g. int, str, custom).
+      Defaults to identity (str).
+    """
+    if cell_to_value is None:
+        # Default: identity on str
+        cell_to_value = cast(Callable[[str], T], lambda ch: ch)
+
+    char_grid = parse_char_grid(raw, trim=trim, keep_empty=keep_empty)
+    result: dict[Pos, T] = {}
+
+    for (r, c), ch in iter_grid(char_grid):
+        result[(r, c)] = cell_to_value(ch)
+
+    return result
+
+
 def add_border(
     grid: Sequence[Sequence[T]],
     border: T = ".",
@@ -183,6 +209,40 @@ def positions_to_grid(
     return grid
 
 
+def dict_to_grid(
+    mapping: Mapping[Pos, T],
+    *,
+    default: T,
+    margin: int = 0,
+) -> list[list[T]]:
+    """Convert a sparse mapping {(r, c): value} to a dense grid.
+
+    Missing cells inside the bounding box are filled with `default`.
+    """
+    if not mapping:
+        return []
+
+    rows = [r for (r, _) in mapping]
+    cols = [c for (_, c) in mapping]
+
+    min_r = min(rows) - margin
+    max_r = max(rows) + margin
+    min_c = min(cols) - margin
+    max_c = max(cols) + margin
+
+    height = max_r - min_r + 1
+    width = max_c - min_c + 1
+
+    grid: list[list[T]] = [[default for _ in range(width)] for _ in range(height)]
+
+    for (r, c), v in mapping.items():
+        gr = r - min_r
+        gc = c - min_c
+        grid[gr][gc] = v
+
+    return grid
+
+
 # ---------------------------------------------------------------------------
 # Printing a grid
 # ---------------------------------------------------------------------------
@@ -295,3 +355,22 @@ def print_positions(
         return
 
     print_grid(grid, sep=sep, file=file)
+
+
+def print_dict_grid(
+    mapping: Mapping[Pos, T],
+    *,
+    default: str = ".",
+    margin: int = 0,
+    sep: str = "",
+    cell_to_str: Callable[[T], str] = str,
+    file=None,
+) -> None:
+    """Print a sparse dict[(row, col) -> value] as a dense grid.
+
+    Missing cells inside the bounding box are filled with `default`.
+    """
+    grid = dict_to_grid(mapping, default=default, margin=margin)
+    if not grid:
+        return
+    print_grid(grid, sep=sep, cell_to_str=cell_to_str, file=file)
