@@ -13,7 +13,7 @@ from typing import Any
 #from aoc.grid import NORTH, SOUTH, EAST, WEST, DIR8, neighbors8, parse_char_grid,
 #  NORTH_EAST as NE, NORTH_WEST as NW, SOUTH_EAST as SE, SOUTH_WEST as SW
 #from aoc.search import bfs, bfs_one, dfs, astar, build_graph
-#from aoc.iteration import split_by, unique_permutations
+#from aoc.iteration import split_by, unique_permutations, nwise
 
 from aoc.common import read_input, time_call
 from aoc.config import AOC_YEAR
