@@ -28,11 +28,11 @@ def parse_input(raw: str) -> Any:
 
 
 def sort_by_dist(points):
-    def dist3d(p1, p2):
+    def dist_ish(p1, p2):
         (x1,y1,z1), (x2,y2,z2) = p1, p2
-        return sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
+        return (x2-x1)**2+(y2-y1)**2+(z2-z1)**2
     
-    dists = [(p1, p2, dist3d(p1,p2)) for p1, p2 in combinations(points,2)]
+    dists = [(p1, p2, dist_ish(p1,p2)) for p1, p2 in combinations(points,2)]
     return sorted(dists, key=lambda x: x[2])
 
 
