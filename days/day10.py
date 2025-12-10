@@ -73,28 +73,30 @@ def part1(data: Any) -> Any:
 def part2(data: Any) -> Any:
     """Solve part 2."""
 
-    def neighbor(bts, goal):
-        bts = [list(btn) for btn in bts]
-
-        def _neigh(joltages):
-            for btn in bts:
-                out = list(joltages)
-                for j in btn:
-                    out[j] += 1
-                    if out[j] > goal[j]: break
-                else:
-                    #print(out)
-                    yield tuple(out)
-        return _neigh
-    
     def fewest_presses(bts, joltages):
-        return bfs_one(
-            start = tuple([0]*len(joltages)),
-            neighbors = neighbor(bts, joltages),
-            is_goal = lambda x: x == tuple(joltages)
-        )
+        # For each joltage dial, find the buttons that can manipulate it
+        j_bts = {i: set() for i,_ in enumerate(joltages)}
+        for i, dial in enumerate(joltages):
+            for j, btn in enumerate(bts):
+                if i in btn: pass
+
+        # For each btn, find the max number of times it can be pressed
+        bts_max = {}
+        for i, btn in enumerate(bts):
+            btn_max = 10**6
+            for j, dial in enumerate(btn):
+               j_bts[i].add(j)
+               btn_max = min(joltages[dial], btn_max)
+            bts_max[i] = btn_max
+
+        # Now, we know that number of btn presses must equal the dial settings
+        print(j_bts, bts_max)
+    
+    for _,b,j in data:
+        print(list(b),list(j))
+        fewest_presses(b,j)
                 
-    return sum(fewest_presses(b, j).goal_cost() for n, (_,b,j) in prog(data))
+    return None
     
 
 
