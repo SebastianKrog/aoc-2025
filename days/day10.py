@@ -73,6 +73,35 @@ def part1(data: Any) -> Any:
 def part2(data: Any) -> Any:
     """Solve part 2."""
 
+    def neighbor(bts, goal):
+        bts = [list(btn) for btn in bts]
+
+        def _neigh(joltages):
+            for btn in bts:
+                out = []
+                btn_i = 0
+                for i, j in enumerate(joltages):
+                    if btn[btn_i] == i:
+                        if goal[i] > j:
+                            break
+                        out.append(j+1)
+                        btn_i += 1
+                    out.append(j)
+                else:
+                    yield tuple(out)
+        return _neigh
+    
+    def fewest_presses(bts, joltages):
+        return bfs_one(
+            start = tuple([0]*len(joltages)),
+            neighbors = neighbor(bts, joltages),
+            is_goal = lambda x: x == joltages
+        )
+                
+    return sum(fewest_presses(b, j).goal_cost() for _,b,j in data) 
+    
+
+
     return data
 
 
@@ -86,8 +115,8 @@ def main() -> None:
     raw = read_input(DAY)
     data = parse_input(raw)
 
-    #p2 = time_call(part2, data)
-    #print(f"Year {AOC_YEAR} Day {DAY} - Part 2: {p2.value} ({p2.seconds:.3f}s)")
+    p2 = time_call(part2, data)
+    print(f"Year {AOC_YEAR} Day {DAY} - Part 2: {p2.value} ({p2.seconds:.3f}s)")
 
 
 if __name__ == "__main__":
