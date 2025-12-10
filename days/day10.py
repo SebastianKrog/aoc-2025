@@ -6,7 +6,7 @@ from re import findall
 #from itertools import combinations, permutations, product
 #from math import prod, lcm, ceil, floor, gcd
 
-#from aoc.progress import prog # Add a progress bar when needed (used as enumerate)
+from aoc.progress import prog # Add a progress bar when needed (used as enumerate)
 
 #from aoc.grid import NORTH, SOUTH, EAST, WEST, DIR4, neighbors4, parse_char_grid,
 #  parse_int_grid, add_pos, UP, DOWN, LEFT, RIGHT, in_bounds
@@ -78,16 +78,12 @@ def part2(data: Any) -> Any:
 
         def _neigh(joltages):
             for btn in bts:
-                out = []
-                btn_i = 0
-                for i, j in enumerate(joltages):
-                    if btn[btn_i] == i:
-                        if goal[i] > j:
-                            break
-                        out.append(j+1)
-                        btn_i += 1
-                    out.append(j)
+                out = list(joltages)
+                for j in btn:
+                    out[j] += 1
+                    if out[j] > goal[j]: break
                 else:
+                    #print(out)
                     yield tuple(out)
         return _neigh
     
@@ -95,10 +91,10 @@ def part2(data: Any) -> Any:
         return bfs_one(
             start = tuple([0]*len(joltages)),
             neighbors = neighbor(bts, joltages),
-            is_goal = lambda x: x == joltages
+            is_goal = lambda x: x == tuple(joltages)
         )
                 
-    return sum(fewest_presses(b, j).goal_cost() for _,b,j in data) 
+    return sum(fewest_presses(b, j).goal_cost() for n, (_,b,j) in prog(data))
     
 
 

@@ -21,4 +21,4 @@ def test_example_part2():
 
     data = parse_input(raw)
     # Replace 0 with the expected answer for part 2.
-    assert part2(data) == 0
+    assert part2(data) == 33
