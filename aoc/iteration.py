@@ -144,13 +144,13 @@ def nwise(
     if n == 1:
         return ((x,) for x in iterable)
 
-    if n == 2 and not circular:
-        return pairwise(iterable)
-
     if circular:
         it_main, it_head = tee(iterable)
         head = tuple(islice(it_head, n - 1))
         iterable = chain(it_main, head)
+
+    if n == 2:
+        return pairwise(iterable)
 
     iters = tee(iterable, n)
     return zip(*(islice(it, i, None) for i, it in enumerate(iters)))
