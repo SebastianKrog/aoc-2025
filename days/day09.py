@@ -79,7 +79,7 @@ def part2(data: Any) -> Any:
     return a_max
 
 
-def main() -> None:#
+def main() -> None:
     raw = read_input(DAY)
     data = parse_input(raw)
 
