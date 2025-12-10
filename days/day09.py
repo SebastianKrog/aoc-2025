@@ -52,13 +52,13 @@ def part2(data: Any) -> Any:
             c_edges[c].append(range(min(r, rn), max(r, rn) + 1))
 
     def eval_rect(p1, p2, a_max):
-        (r1, c1), (r2, c2) = p1, p2
-        if r1 == r2 or c1 == c2: return a_max # ignore single width
+        if p1[0] == p2[0] or p1[1] == p2[1]: return a_max # ignore single width
 
-        area = (abs(r2-r1)+1)*(abs(c2-c1)+1)
+        r1, c1 = min(p1[0], p2[0]), min(p1[1], p2[1]) 
+        r2, c2 = max(p1[0], p2[0]), max(p1[1], p2[1])
+
+        area = (r2-r1+1)*(c2-c1+1)
         if area <= a_max: return a_max
-
-        (r1, c1), (r2, c2) = (min(r1, r2), min(c1, c2)), (max(r1, r2), max(c1, c2))
 
         for r in range(r1 + 1, r2):
             if r in r_edges:
@@ -73,7 +73,8 @@ def part2(data: Any) -> Any:
         return area
 
     a_max = 0
-    for n, (p1, p2) in prog(combinations(data, 2), total=(len(data)*len(data)-1)/2):
+    total_comb = (len(data)*len(data)-1)//2
+    for n, (p1, p2) in prog(combinations(data, 2), total=total_comb):
         a_max = eval_rect(p1, p2, a_max)
     
     return a_max
