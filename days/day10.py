@@ -12,7 +12,7 @@ from re import findall
 #  parse_int_grid, add_pos, UP, DOWN, LEFT, RIGHT, in_bounds
 #from aoc.grid import NORTH, SOUTH, EAST, WEST, DIR8, neighbors8, parse_char_grid,
 #  NORTH_EAST as NE, NORTH_WEST as NW, SOUTH_EAST as SE, SOUTH_WEST as SW
-#from aoc.search import bfs, bfs_one, dfs, astar, build_graph
+from aoc.search import bfs_one #, dfs, astar, build_graph, bfs
 #from aoc.iteration import split_by, unique_permutations, nwise
 
 from aoc.common import read_input, time_call
@@ -40,26 +40,34 @@ def part1(data: Any) -> Any:
     """Solve part 1."""
 
     machines = []
-    for l,bts,_ in data:
-        mod = 2**len(l),
-        l = sum(2**int(n) for n,_ in enumerate(l))
-        bts = [sum(n**2 for n in b) for b in bts]
-        machines.append(mod, l, bts)
+    for lights, bts,_ in data:
+        mod = 2**len(lights)
+        lights = sum(int(l)*(2**n) for n, l in enumerate(lights))
+        bts = [sum(2**n for n in b) for b in bts]
+        machines.append((mod, lights, bts))
     
-    def press_btn(mod, lights, btn):
-        return (lights+btn) % mod
+    #print(machines)
 
-    def neighbor(mod, lights, bts):
+    def neighbor(mod, bts):
         def _neigh(lights):
             for btn in bts:
-                yield press_btn(mod, lights, btn)
+                yield (lights^btn) % mod
         return _neigh
 
-    def fewest_presses(goal, buttons):
-        start = [False] * len(goal)
+    def fewest_presses(mod, lights, bts):
+        return bfs_one(
+            start=0,
+            neighbors=neighbor(mod, bts),
+            is_goal=lambda x: x == lights
+        )
 
+    #zum = 0
+    #for i, (m,l,b) in enumerate(machines):
+    #    n = fewest_presses(m,l,b)
+    #    print(i, m,l,b, n.goal_cost(), n.path_to_goal())
+    #    zum += n.goal_cost()
 
-    return data
+    return sum(fewest_presses(m,l,b).goal_cost() for m,l,b in machines) 
 
 
 def part2(data: Any) -> Any:

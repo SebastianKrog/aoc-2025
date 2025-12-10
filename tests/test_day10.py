@@ -12,7 +12,7 @@ def test_example_part1():
 
     data = parse_input(raw)
     # Replace 0 with the expected answer for part 1.
-    assert part1(data) == 10
+    assert part1(data) == 7
 
 @pytest.mark.skip(reason="Skip until you've done part1")
 def test_example_part2():
