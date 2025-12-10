@@ -39,15 +39,21 @@ def parse_input(raw: str) -> Any:
 def part1(data: Any) -> Any:
     """Solve part 1."""
 
-    # Maybe turn into modulo math?
-    def press_button(lights, button):
-        b_i = 0
-        out = []
-        for n, l in enumerate(lights):
-            if button[b_i] == n:
-                out.append(not l)
-                b_i += 1
-            out.append(l)
+    machines = []
+    for l,bts,_ in data:
+        mod = 2**len(l),
+        l = sum(2**int(n) for n,_ in enumerate(l))
+        bts = [sum(n**2 for n in b) for b in bts]
+        machines.append(mod, l, bts)
+    
+    def press_btn(mod, lights, btn):
+        return (lights+btn) % mod
+
+    def neighbor(mod, lights, bts):
+        def _neigh(lights):
+            for btn in bts:
+                yield press_btn(mod, lights, btn)
+        return _neigh
 
     def fewest_presses(goal, buttons):
         start = [False] * len(goal)
