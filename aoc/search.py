@@ -29,8 +29,8 @@ def reconstruct_path(parent: dict[T, T], end: T) -> list[T]:
 
 
 @dataclass
-class BFSResult(Generic[T]):
-    dist: dict[T, int]
+class SearchResult(Generic[T]):
+    dist: dict[T, float | int]
     parent: dict[T, T]
     goal: T | None = None
 
@@ -38,13 +38,26 @@ class BFSResult(Generic[T]):
         if target not in self.dist:
             return None
         return reconstruct_path(self.parent, target)
+    
+    def path_to_goal(self) -> list[T] | None:
+        if self.goal is None:
+            return None
+        return reconstruct_path(self.parent, self.goal)
+    
+    def cost_to(self, target: T) -> float | int | None:
+        return self.dist.get(target)
+
+    def goal_cost(self) -> float | int | None:
+        if self.goal is None:
+            return None
+        return self.dist[self.goal]
 
 
 def bfs(
     starts: Iterable[T],
     neighbors: Callable[[T], Iterable[T]],
     is_goal: Callable[[T], bool] | None = None,
-) -> BFSResult[T]:
+) -> SearchResult[T]:
     """Breadth-first search from one or more start states.
 
     - neighbors(state) -> iterable of next states (lambda-friendly)
@@ -74,48 +87,23 @@ def bfs(
             parent[nxt] = current
             q.append(nxt)
 
-    return BFSResult(dist=dist, parent=parent, goal=found)
+    return SearchResult(dist=dist, parent=parent, goal=found)
 
 
 def bfs_one(
     start: T,
     neighbors: Callable[[T], Iterable[T]],
     is_goal: Callable[[T], bool] | None = None,
-) -> BFSResult[T]:
+) -> SearchResult[T]:
     """Convenience wrapper for BFS with a single start state."""
     return bfs([start], neighbors, is_goal)
-
-
-@dataclass
-class DijkstraResult(Generic[T]):
-    dist: dict[T, float]
-    parent: dict[T, T]
-    goal: T | None = None
-
-    def path_to(self, target: T) -> list[T] | None:
-        if target not in self.dist:
-            return None
-        return reconstruct_path(self.parent, target)
-    
-    def path_to_goal(self) -> list[T] | None:
-        if self.goal is None:
-            return None
-        return reconstruct_path(self.parent, self.goal)
-    
-    def cost_to(self, target: T) -> float | None:
-        return self.dist.get(target)
-
-    def goal_cost(self) -> float | None:
-        if self.goal is None:
-            return None
-        return self.dist[self.goal]
 
 
 def dijkstra(
     starts: Iterable[T],
     neighbors: Callable[[T], Iterable[tuple[T, float]]],
     is_goal: Callable[[T], bool] | None = None,
-) -> DijkstraResult[T]:
+) -> SearchResult[T]:
     """Dijkstra's algorithm for non-negative edge weights.
 
     - starts: one or more start nodes
@@ -151,14 +139,14 @@ def dijkstra(
                 parent[nxt] = node
                 heapq.heappush(heap, (new_d, nxt))
 
-    return DijkstraResult(dist=dist, parent=parent, goal=found)
+    return SearchResult(dist=dist, parent=parent, goal=found)
 
 
 def dijkstra_one(
     start: T,
     neighbors: Callable[[T], Iterable[tuple[T, float]]],
     is_goal: Callable[[T], bool] | None = None,
-) -> DijkstraResult[T]:
+) -> SearchResult[T]:
     """Convenience wrapper for Dijkstra with a single start state."""
     return dijkstra([start], neighbors, is_goal)
 
