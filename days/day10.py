@@ -73,18 +73,18 @@ def part1(data: Any) -> Any:
 def part2(data: Any) -> Any:
     """Solve part 2."""
 
-    def fewest_presses(bts, joltages):
+    def fewest_presses(buttons, joltages):
         value = sum(joltages)
-        print(value)
+        #print(value)
 
         # For each joltage dial, find the buttons that can manipulate it
-        j_bts = {i: set() for i, _ in enumerate(joltages)}
+        j_bts = [set() for i, _ in enumerate(joltages)]
 
         # bts_max: For each btn, find the max number of times it can be pressed
         # bts_val: For each btn, the number of joltages it will increase (len)
         bts_max = {}
         bts_val = {}
-        for i, btn in enumerate(bts):
+        for i, btn in enumerate(buttons):
             btn_max = 10**6
             bts_val[i] = len(btn)
             for j, dial in enumerate(btn):
@@ -92,11 +92,11 @@ def part2(data: Any) -> Any:
                btn_max = min(joltages[dial], btn_max)
             bts_max[i] = btn_max
 
-        print(j_bts, bts_max)
+        #print(j_bts, bts_max)
 
         # Possible minor optimization:
-        for dial, bts_i in j_bts.items():
-            if len(bts_i) == 1: pass # We know that only one button can set this dial
+        #for j, bts in enumerate(j_bts):
+        #    if len(bts) == 1: pass # We know that only one button can set this dial
 
         # Now, we know that number of btn presses must equal the dial settings
         #
@@ -107,39 +107,37 @@ def part2(data: Any) -> Any:
         # q = b + d
         # min(a+b+c+d)
 
-        # a = x - b, a = z - d => b = -z + d + x
-        # b = y - c - d, b = q - d =>  -z + d + x = y - c - d,  -z + d + x = q - d
-        # d = a - z
-
-        # Let's try dijkstra. The edge cost will be max(bts_val.values() - bts_val(i))
-        # So we greedily push the button that increments the most buttons first
+        # Let's try dijkstra. The edge cost will be max -bts_val(i)
+        # So we greedily push the button that increments the most dials first
         # But we don't care about order... so x y x y == y x y x (order of pushes)
 
-        start = (0,) * len(bts)
+        start = (0,) * len(buttons)
+        #print(buttons)
 
         def check_press(node, goal = False):
-            for dial in j_bts:
-                dial_val = sum(node[i] for i in dial)
+            for dial, bts in enumerate(j_bts):
+                #print(node, bts)
+                dial_val = sum(node[i] for i in bts)
                 if dial_val > joltages[dial]: return False
                 if goal and dial_val < joltages[dial]: return False
             return True
 
         def neighbor(node):
-            for i, btn in enumerate(bts):
+            for i, btn in enumerate(buttons):
                 if bts_max[i] < node[i] + 1: continue
-                nxt = node[:i] + (node[i] + 1,) + node[i+1:], -bts_val[i]
-                if sum(bts_val[i]*j for i, j in range(btn)) > value: continue
+                nxt = node[:i] + (node[i] + 1,) + node[i+1:]
+                if sum(bts_val[n]*j for n, j in enumerate(node)) > value: continue
                 if check_press(nxt):
                     yield tuple(nxt), -bts_val[i]
         
-        return dijkstra_one(start, neighbor, lambda x: check_press(x, goal=True)).goal_cost()
+        return sum(dijkstra_one(start, neighbor, lambda x: check_press(x, goal=True)).goal)
 
-    
-    for _,b,j in data:
+    zum = 0
+    for n, (_,b,j) in prog(data):
         buttons = tuple(list(a) for  a in b)
-        fewest_presses(tuple(buttons),tuple(j))
+        zum += fewest_presses(tuple(buttons),tuple(j))
                 
-    return None
+    return zum
 
 
 def main() -> None:
