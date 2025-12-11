@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from functools import cache
 from collections import deque, defaultdict
 from dataclasses import dataclass
 from math import inf
@@ -256,3 +257,31 @@ def build_graph(
             graph[node]  # ensure key exists
 
     return dict(graph)
+
+
+def count_paths(
+    start: T,
+    neighbors: Callable[[T], Iterable[T]],
+    goal: T | None = None,
+    *,
+    is_goal: Callable[[T], bool] | None = None,
+    is_valid: Callable[[T], bool] | None = None,
+) -> int:
+    """
+    Returns the number of paths in a DAG from start to goal
+    If is_valid is supplied, nodes where is_valid(node) returns False are skipped.
+    """
+    @cache
+    def dp(node: T) -> int:
+        if is_valid is not None and not is_valid(node):
+            return 0
+        if is_goal is not None:
+            if is_goal(node): return 1
+        elif node == goal: return 1
+        
+        return sum(dp(nxt) for nxt in neighbors(node))
+    
+    if is_goal is None and goal is None:
+        raise AttributeError("Must suplly either goal or is_goal.")
+    
+    return dp(start)
