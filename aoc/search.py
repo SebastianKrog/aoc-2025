@@ -1,25 +1,22 @@
 from __future__ import annotations
 
-from functools import cache
 from collections import deque, defaultdict
+from collections.abc import Callable, Hashable, Iterable
 from dataclasses import dataclass
+from functools import cache
 from math import inf
-from typing import (
-    Callable,
-    DefaultDict,
-    Generic,
-    Hashable,
-    Iterable,
-    TypeVar,
-)
+from typing import DefaultDict, Generic, TypeAlias, TypeVar
 import heapq
 
 T = TypeVar("T", bound=Hashable)
 U = TypeVar("U", bound=Hashable)
+R = TypeVar("R")
+
+Weight: TypeAlias = float | int
 
 
 def reconstruct_path(parent: dict[T, T], end: T) -> list[T]:
-    """Reconstruct a path from any root to 'end' using a parent map."""
+    """Reconstruct a path from a root to 'end' using a parent map (stops when no parent exists)."""
     path: list[T] = [end]
     cur = end
     while cur in parent:
@@ -31,7 +28,7 @@ def reconstruct_path(parent: dict[T, T], end: T) -> list[T]:
 
 @dataclass
 class SearchResult(Generic[T]):
-    dist: dict[T, float | int]
+    dist: dict[T, Weight]
     parent: dict[T, T]
     goal: T | None = None
 
@@ -39,19 +36,19 @@ class SearchResult(Generic[T]):
         if target not in self.dist:
             return None
         return reconstruct_path(self.parent, target)
-    
+
     def path_to_goal(self) -> list[T] | None:
-        if self.goal is None:
+        if self.goal is None or self.goal not in self.dist:
             return None
         return reconstruct_path(self.parent, self.goal)
-    
-    def cost_to(self, target: T) -> float | int | None:
+
+    def cost_to(self, target: T) -> Weight | None:
         return self.dist.get(target)
 
-    def goal_cost(self) -> float | int | None:
+    def goal_cost(self) -> Weight | None:
         if self.goal is None:
             return None
-        return self.dist[self.goal]
+        return self.dist.get(self.goal)
 
 
 def bfs(
@@ -59,11 +56,7 @@ def bfs(
     neighbors: Callable[[T], Iterable[T]],
     is_goal: Callable[[T], bool] | None = None,
 ) -> SearchResult[T]:
-    """Breadth-first search from one or more start states.
-
-    - neighbors(state) -> iterable of next states (lambda-friendly)
-    - is_goal(state) -> bool (optional)
-    """
+    """Breadth-first search from one or more start states (unweighted)."""
     dist: dict[T, int] = {}
     parent: dict[T, T] = {}
     q: deque[T] = deque()
@@ -96,37 +89,30 @@ def bfs_one(
     neighbors: Callable[[T], Iterable[T]],
     is_goal: Callable[[T], bool] | None = None,
 ) -> SearchResult[T]:
-    """Convenience wrapper for BFS with a single start state."""
     return bfs([start], neighbors, is_goal)
 
 
 def dijkstra(
     starts: Iterable[T],
-    neighbors: Callable[[T], Iterable[tuple[T, float]]],
+    neighbors: Callable[[T], Iterable[tuple[T, Weight]]],
     is_goal: Callable[[T], bool] | None = None,
 ) -> SearchResult[T]:
-    """Dijkstra's algorithm for non-negative edge weights.
-
-    - starts: one or more start nodes
-    - neighbors(state) -> iterable of (next_state, step_cost)
-    - is_goal(state) -> bool (optional early stop)
-    """
-    dist: dict[T, float] = {}
+    """Dijkstra's algorithm for non-negative edge weights."""
+    dist: dict[T, Weight] = {}
     parent: dict[T, T] = {}
-    heap: list[tuple[float, T]] = []
+    heap: list[tuple[Weight, T]] = []
 
     for s in starts:
         if s in dist:
             continue
-        dist[s] = 0.0
-        heapq.heappush(heap, (0.0, s))
+        dist[s] = 0
+        heapq.heappush(heap, (0, s))
 
     found: T | None = None
 
     while heap:
         d_cur, node = heapq.heappop(heap)
         if d_cur != dist.get(node, inf):
-            # Stale heap entry
             continue
 
         if is_goal is not None and is_goal(node):
@@ -145,10 +131,9 @@ def dijkstra(
 
 def dijkstra_one(
     start: T,
-    neighbors: Callable[[T], Iterable[tuple[T, float]]],
+    neighbors: Callable[[T], Iterable[tuple[T, Weight]]],
     is_goal: Callable[[T], bool] | None = None,
 ) -> SearchResult[T]:
-    """Convenience wrapper for Dijkstra with a single start state."""
     return dijkstra([start], neighbors, is_goal)
 
 
@@ -157,12 +142,7 @@ def dfs(
     neighbors: Callable[[T], Iterable[T]],
     is_valid: Callable[[T], bool] | None = None,
 ) -> Iterable[T]:
-    """Iterative depth-first search, yielding nodes in pre-order.
-
-    is_valid(node) -> bool (optional): if provided and returns False,
-    the node is not yielded and its neighbors are not explored. The
-    check is done once per node, after the seen-check.
-    """
+    """Iterative depth-first traversal yielding nodes in pre-order."""
     seen: set[T] = set()
     stack: list[T] = [start]
 
@@ -173,12 +153,11 @@ def dfs(
         seen.add(node)
 
         if is_valid is not None and not is_valid(node):
-            # Skip yielding and do not expand neighbors
             continue
 
         yield node
 
-        # Reverse to roughly preserve left-to-right order vs recursion
+        # Keep deterministic-ish order vs recursion by materializing and reversing.
         neigh_list = list(neighbors(node))
         for nxt in reversed(neigh_list):
             if nxt not in seen:
@@ -188,46 +167,51 @@ def dfs(
 def astar(
     start: T,
     is_goal: Callable[[T], bool],
-    neighbors: Callable[[T], Iterable[tuple[T, float]]],
+    neighbors: Callable[[T], Iterable[tuple[T, Weight]]],
     heuristic: Callable[[T], float] | None = None,
-) -> tuple[list[T] | None, float]:
-    """A* search for weighted graphs.
+) -> SearchResult[T]:
+    """A* search for non-negative edge weights.
 
     neighbors(state) -> iterable of (next_state, step_cost).
-    heuristic(state)  -> estimated remaining cost (>=0).
+    heuristic(state) -> estimated remaining cost (>=0).
     """
-    if heuristic is None:
-        def _h(_: T) -> float:
-            return 0.0
-    else:
-        _h = heuristic
+    def _h(x: T) -> float:
+        return 0.0 if heuristic is None else float(heuristic(x))
 
-    open_heap: list[tuple[float, float, T]] = []
+    open_heap: list[tuple[float, Weight, T]] = []
     parent: dict[T, T] = {}
-    g: dict[T, float] = {start: 0.0}
+    g: dict[T, Weight] = {start: 0}
 
-    heapq.heappush(open_heap, (_h(start), 0.0, start))
+    heapq.heappush(open_heap, (_h(start), 0, start))
+
+    found: T | None = None
 
     while open_heap:
-        f, g_cur, node = heapq.heappop(open_heap)
+        _f, g_cur, node = heapq.heappop(open_heap)
         if g_cur != g.get(node, inf):
             continue
 
         if is_goal(node):
-            path = reconstruct_path(parent, node)
-            return path, g_cur
+            found = node
+            break
 
         for nxt, cost in neighbors(node):
             new_g = g_cur + cost
             if new_g < g.get(nxt, inf):
                 g[nxt] = new_g
                 parent[nxt] = node
-                heapq.heappush(
-                    open_heap,
-                    (new_g + _h(nxt), new_g, nxt),
-                )
+                heapq.heappush(open_heap, (float(new_g) + _h(nxt), new_g, nxt))
 
-    return None, inf
+    return SearchResult(dist=g, parent=parent, goal=found)
+
+
+def astar_one(
+    start: T,
+    is_goal: Callable[[T], bool],
+    neighbors: Callable[[T], Iterable[tuple[T, Weight]]],
+    heuristic: Callable[[T], float] | None = None,
+) -> SearchResult[T]:
+    return astar(start, is_goal, neighbors, heuristic)
 
 
 def build_graph(
@@ -235,28 +219,99 @@ def build_graph(
     parse_line: Callable[[str], tuple[U, Iterable[U]]],
     *,
     bidirectional: bool = False,
+    dedupe: bool = True,
 ) -> dict[U, list[U]]:
     """Build an adjacency list graph from text lines.
 
     parse_line(line) -> (node, iterable_of_neighbors)
 
     bidirectional=True will add reverse edges for each neighbor.
+    dedupe=True will remove duplicate edges while preserving first-seen order.
     """
     graph: DefaultDict[U, list[U]] = defaultdict(list)
+    seen: DefaultDict[U, set[U]] = defaultdict(set)
+
+    def _add_edge(a: U, b: U) -> None:
+        if not dedupe:
+            graph[a].append(b)
+            return
+        if b in seen[a]:
+            return
+        seen[a].add(b)
+        graph[a].append(b)
 
     for line in lines:
         text = line.strip()
         if not text:
             continue
         node, neighs = parse_line(text)
+
+        _ = graph[node]  # ensure key exists even if it has no neighbors
+
         for n in neighs:
-            graph[node].append(n)
+            _add_edge(node, n)
             if bidirectional:
-                graph[n].append(node)
-        if node not in graph:
-            graph[node]  # ensure key exists
+                _ = graph[n]
+                _add_edge(n, node)
 
     return dict(graph)
+
+
+def reduce_paths(
+    start: T,
+    neighbors: Callable[[T], Iterable[T]],
+    goal: T | None = None,
+    *,
+    is_goal: Callable[[T], bool] | None = None,
+    is_valid: Callable[[T], bool] | None = None,
+    reduce_fn: Callable[[Iterable[R]], R],
+    goal_value: R | Callable[[T], R],
+    invalid_value: R | Callable[[T], R],
+    empty_value: R | Callable[[T], R],
+) -> R:
+    """Reduce path-values in a DAG from start to a goal.
+
+    dp(node):
+      - if invalid -> invalid_value(node)
+      - if goal    -> goal_value(node)
+      - else       -> reduce_fn(dp(child) for child in neighbors(node))
+                      (or empty_value(node) if no children)
+
+    Raises ValueError if a cycle is detected.
+    """
+    if is_goal is None and goal is None:
+        raise ValueError("Must supply either goal or is_goal.")
+
+    def _val(v: R | Callable[[T], R], node: T) -> R:
+        return v(node) if callable(v) else v
+
+    visiting: set[T] = set()
+
+    @cache
+    def dp(node: T) -> R:
+        if is_valid is not None and not is_valid(node):
+            return _val(invalid_value, node)
+
+        if is_goal is not None:
+            if is_goal(node):
+                return _val(goal_value, node)
+        else:
+            if node == goal:
+                return _val(goal_value, node)
+
+        if node in visiting:
+            raise ValueError("Cycle detected: reduce_paths requires a DAG.")
+
+        visiting.add(node)
+        try:
+            vals = [dp(nxt) for nxt in neighbors(node)]
+            if not vals:
+                return _val(empty_value, node)
+            return reduce_fn(vals)
+        finally:
+            visiting.remove(node)
+
+    return dp(start)
 
 
 def count_paths(
@@ -267,21 +322,15 @@ def count_paths(
     is_goal: Callable[[T], bool] | None = None,
     is_valid: Callable[[T], bool] | None = None,
 ) -> int:
-    """
-    Returns the number of paths in a DAG from start to goal
-    If is_valid is supplied, nodes where is_valid(node) returns False are skipped.
-    """
-    @cache
-    def dp(node: T) -> int:
-        if is_valid is not None and not is_valid(node):
-            return 0
-        if is_goal is not None:
-            if is_goal(node): return 1
-        elif node == goal: return 1
-        
-        return sum(dp(nxt) for nxt in neighbors(node))
-    
-    if is_goal is None and goal is None:
-        raise AttributeError("Must suplly either goal or is_goal.")
-    
-    return dp(start)
+    """Count paths in a DAG from start to a goal (by value or predicate)."""
+    return reduce_paths(
+        start,
+        neighbors,
+        goal,
+        is_goal=is_goal,
+        is_valid=is_valid,
+        reduce_fn=sum,
+        goal_value=1,
+        invalid_value=0,
+        empty_value=0,
+    )
