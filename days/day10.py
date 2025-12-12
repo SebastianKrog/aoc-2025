@@ -39,15 +39,13 @@ def parse_input(raw: str) -> Any:
 
 def part1(data: Any) -> Any:
     """Solve part 1."""
-
+    # Recompute for modulo math
     machines = []
     for lights, bts,_ in data:
         mod = 2**len(lights)
-        lights = sum(int(l)*(2**n) for n, l in enumerate(lights))
+        lights = sum(l*(2**n) for n, l in enumerate(lights))
         bts = [sum(2**n for n in b) for b in bts]
         machines.append((mod, lights, bts))
-    
-    #print(machines)
 
     def neighbor(mod, bts):
         def _neigh(lights):
@@ -60,15 +58,9 @@ def part1(data: Any) -> Any:
             start=0,
             neighbors=neighbor(mod, bts),
             is_goal=lambda x: x == lights
-        )
+        ).goal_cost()
 
-    #zum = 0
-    #for i, (m,l,b) in enumerate(machines):
-    #    n = fewest_presses(m,l,b)
-    #    print(i, m,l,b, n.goal_cost(), n.path_to_goal())
-    #    zum += n.goal_cost()
-
-    return sum(fewest_presses(m,l,b).goal_cost() for m,l,b in machines) 
+    return sum(fewest_presses(m,l,b) for m,l,b in machines) 
 
 
 def part2(data: Any) -> Any:
@@ -119,7 +111,7 @@ def part2(data: Any) -> Any:
         # print([m.evaluate(v).as_long() for v in xs]) # Print button presses
         return int(model.evaluate(Sum(vars)).as_long())
 
-    return sum(fewest_presses(tuple(b),tuple(j)) for n, (_,b,j) in prog(data))
+    return sum(fewest_presses(b,j) for n, (_,b,j) in prog(data))
 
 
 def main() -> None:
