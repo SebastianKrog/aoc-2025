@@ -104,7 +104,7 @@ def part2(data: Any) -> Any:
         # Add assumptions (x_i >= 0)
         solver.add([v >= 0 for v in vars])
 
-        # Add each equation (D_j == x_j0 ... x_jx )
+        # Add an equation for each dial D (D_j == x_j0 ... x_jn)
         for j, dial_setting in enumerate(joltages):
             solver.add(Sum([vars[i] for i in j_bts[j]]) == dial_setting)
 
