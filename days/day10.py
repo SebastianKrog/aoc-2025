@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any
+from z3 import Int, Optimize, Sum, sat
 
 from re import findall
 #from itertools import combinations, permutations, product
@@ -29,9 +30,9 @@ def parse_input(raw: str) -> Any:
     out = []
     for lights, buttons, joltage in machines:
         lights = [c == "#" for c in lights]
-        buttons = [(int(a) for a in l.strip("()").split(","))
-                   for l in findall(r"\([0-9,]+\)", buttons)]
-        joltage = [int(a) for a in  joltage.split(",")]
+        buttons = tuple((int(a) for a in l.strip("()").split(","))
+                   for l in findall(r"\([0-9,]+\)", buttons))
+        joltage = tuple(int(a) for a in  joltage.split(","))
         out.append((lights, buttons, joltage))
     return out
 
@@ -74,70 +75,51 @@ def part2(data: Any) -> Any:
     """Solve part 2."""
 
     def fewest_presses(buttons, joltages):
-        value = sum(joltages)
-        #print(value)
 
         # For each joltage dial, find the buttons that can manipulate it
-        j_bts = [set() for i, _ in enumerate(joltages)]
+        j_bts = [[] for i, _ in enumerate(joltages)]
 
-        # bts_max: For each btn, find the max number of times it can be pressed
-        # bts_val: For each btn, the number of joltages it will increase (len)
-        bts_max = {}
-        bts_val = {}
         for i, btn in enumerate(buttons):
-            btn_max = 10**6
-            bts_val[i] = len(btn)
-            for j, dial in enumerate(btn):
-               j_bts[dial].add(i)
-               btn_max = min(joltages[dial], btn_max)
-            bts_max[i] = btn_max
-
-        #print(j_bts, bts_max)
-
-        # Possible minor optimization:
-        #for j, bts in enumerate(j_bts):
-        #    if len(bts) == 1: pass # We know that only one button can set this dial
+            for dial in btn:
+               j_bts[dial].append(i)
 
         # Now, we know that number of btn presses must equal the dial settings
         #
-        # for btn a->d and dial x,y,z,q
+        # E.g. for a btn like this a->d and dial x,y,z,q
         # x = a + b
         # y = b + c + d
         # z = a + d
         # q = b + d
-        # min(a+b+c+d)
+        #
+        # We solve for
+        # min(sum(a, b, c, d))
 
-        # Let's try dijkstra. The edge cost will be max -bts_val(i)
-        # So we greedily push the button that increments the most dials first
-        # But we don't care about order... so x y x y == y x y x (order of pushes)
+        # We use Z3
+        # Define vars using Int(x_i), one for each button
+        vars = [Int(f"x{i}") for i, _ in enumerate(buttons)]
 
-        start = (0,) * len(buttons)
-        #print(buttons)
+        # Initialize the solver
+        solver = Optimize()
 
-        def check_press(node, goal = False):
-            for dial, bts in enumerate(j_bts):
-                #print(node, bts)
-                dial_val = sum(node[i] for i in bts)
-                if dial_val > joltages[dial]: return False
-                if goal and dial_val < joltages[dial]: return False
-            return True
+        # Add assumptions (x_i >= 0)
+        solver.add([v >= 0 for v in vars])
 
-        def neighbor(node):
-            for i, btn in enumerate(buttons):
-                if bts_max[i] < node[i] + 1: continue
-                nxt = node[:i] + (node[i] + 1,) + node[i+1:]
-                if sum(bts_val[n]*j for n, j in enumerate(node)) > value: continue
-                if check_press(nxt):
-                    yield tuple(nxt), -bts_val[i]
+        # Add each equation (D_j == x_j0 ... x_jx )
+        for j, dial_setting in enumerate(joltages):
+            solver.add(Sum([vars[i] for i in j_bts[j]]) == dial_setting)
+
+        # Find the solution that minimizes the sum of vars
+        solver.minimize(Sum(vars))
+
+        if solver.check() != sat:
+            raise RuntimeError("No solution found")
         
-        return sum(dijkstra_one(start, neighbor, lambda x: check_press(x, goal=True)).goal)
+        model = solver.model()
 
-    zum = 0
-    for n, (_,b,j) in prog(data):
-        buttons = tuple(list(a) for  a in b)
-        zum += fewest_presses(tuple(buttons),tuple(j))
-                
-    return zum
+        # print([m.evaluate(v).as_long() for v in xs]) # Print button presses
+        return int(model.evaluate(Sum(vars)).as_long())
+
+    return sum(fewest_presses(tuple(b),tuple(j)) for n, (_,b,j) in prog(data))
 
 
 def main() -> None:
