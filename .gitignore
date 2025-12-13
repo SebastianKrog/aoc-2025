@@ -217,5 +217,5 @@ __marimo__/
 
 # aoc-python local settings
 .env
-inputs/*
+inputs/day*/input.txt
 questions/*
