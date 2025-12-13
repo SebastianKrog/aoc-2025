@@ -111,7 +111,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="command", required=True)
 
     sp_init = sub.add_parser(
-        "init-day",
+        "init",
         help="Fetch input/examples/question and scaffold code + tests for a given day.",
     )
     sp_init.add_argument("day", type=int, help="AoC day (1-25)")
