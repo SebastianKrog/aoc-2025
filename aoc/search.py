@@ -89,6 +89,7 @@ def bfs_one(
     neighbors: Callable[[T], Iterable[T]],
     is_goal: Callable[[T], bool] | None = None,
 ) -> SearchResult[T]:
+    """Breadth-first search from one start states (unweighted)."""
     return bfs([start], neighbors, is_goal)
 
 
@@ -134,6 +135,7 @@ def dijkstra_one(
     neighbors: Callable[[T], Iterable[tuple[T, Weight]]],
     is_goal: Callable[[T], bool] | None = None,
 ) -> SearchResult[T]:
+    """Iterative depth-first traversal yielding nodes in pre-order."""
     return dijkstra([start], neighbors, is_goal)
 
 
@@ -163,14 +165,15 @@ def dfs(
             if nxt not in seen:
                 stack.append(nxt)
 
-
+    
 def astar(
-    start: T,
+    starts: Iterable[T],
     is_goal: Callable[[T], bool],
     neighbors: Callable[[T], Iterable[tuple[T, Weight]]],
     heuristic: Callable[[T], float] | None = None,
 ) -> SearchResult[T]:
-    """A* search for non-negative edge weights.
+    """
+    A* for non-negative edge weights.
 
     neighbors(state) -> iterable of (next_state, step_cost).
     heuristic(state) -> estimated remaining cost (>=0).
@@ -180,9 +183,13 @@ def astar(
 
     open_heap: list[tuple[float, Weight, T]] = []
     parent: dict[T, T] = {}
-    g: dict[T, Weight] = {start: 0}
+    g: dict[T, Weight] = {}
 
-    heapq.heappush(open_heap, (_h(start), 0, start))
+    for s in starts:
+        if s in g:
+            continue
+        g[s] = 0
+        heapq.heappush(open_heap, (_h(s), 0, s))
 
     found: T | None = None
 
@@ -211,7 +218,14 @@ def astar_one(
     neighbors: Callable[[T], Iterable[tuple[T, Weight]]],
     heuristic: Callable[[T], float] | None = None,
 ) -> SearchResult[T]:
-    return astar(start, is_goal, neighbors, heuristic)
+    """
+    A* for non-negative edge weights.
+
+    neighbors(state) -> iterable of (next_state, step_cost).
+    heuristic(state) -> estimated remaining cost (>=0).
+    """
+    return astar([start], is_goal, neighbors, heuristic)
+
 
 
 def build_graph(
