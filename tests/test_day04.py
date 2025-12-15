@@ -10,15 +10,11 @@ def test_example_part1():
     raw = read_example(DAY, idx=1)
     from days.day04 import parse_input, part1
 
-    data = parse_input(raw)
-    # Replace 0 with the expected answer for part 1.
-    assert part1(data) == 13
+    assert part1(parse_input(raw)) == 13
 
 
 def test_example_part2():
     raw = read_example(DAY, idx=1)
     from days.day04 import parse_input, part2
 
-    data = parse_input(raw)
-    # Replace 0 with the expected answer for part 2.
-    assert part2(data) == 43
+    assert part2(parse_input(raw)) == 43
