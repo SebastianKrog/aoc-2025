@@ -30,4 +30,12 @@ def test_example_part2_2():
 
     data = parse_input(raw)
     # Replace 0 with the expected answer for part 2.
-    assert part2(data) == 200
+    assert part2(data) == 316
+
+
+def test_example_part2_3():
+    raw = read_example(DAY, idx=6)
+    from days.day10 import solve
+
+    # Replace 0 with the expected answer for part 2.
+    assert solve(raw) == 200
